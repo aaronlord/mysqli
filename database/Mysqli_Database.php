@@ -17,9 +17,28 @@ class Mysqli_Database {
 	}
 
 	public function query($sql){
+		$this->num_rows = 0;
+		$this->affected_rows = -1;
+
 		if(is_object($this->connection)){
-			# Ready the statement
-			$this->statement = $this->connection->prepare($sql);
+			$stmt = $this->connection->query($sql);
+			# Affected rows has to go here for query :o
+			$this->affected_rows = $this->connection->affected_rows;
+			$this->stmt = $stmt;
+			return $this;
+		}
+		else {
+			throw new Exception;
+		}
+	}
+
+	public function prepare($sql){
+		$this->num_rows = 0;
+		$this->affected_rows = -1;
+
+		if(is_object($this->connection)){
+			# Ready the stmt
+			$this->stmt = $this->connection->prepare($sql);
 			return $this;
 		}
 		else {
@@ -30,7 +49,7 @@ class Mysqli_Database {
 	public function multi_query(){ }
 
 	public function execute(){
-		if(is_object($this->connection) && is_object($this->statement)){
+		if(is_object($this->connection) && is_object($this->stmt)){
 			# Ready the params
 			if(count($args = func_get_args()) > 0){
 				$types = array();
@@ -46,12 +65,14 @@ class Mysqli_Database {
 
 				# Call bind_param (avoiding the pass_by_reference crap)
 				call_user_func_array(
-					array($this->statement, 'bind_param'),
+					array($this->stmt, 'bind_param'),
 					$this->_pass_by_reference($params)
 				);
 			}
 
-			if($this->statement->execute()){
+			if($this->stmt->execute()){
+				# Affected rows to be run after execute for prepares
+				$this->affected_rows = $this->stmt->affected_rows;
 				return $this;
 			}
 			else {
@@ -63,40 +84,51 @@ class Mysqli_Database {
 		}
 	}
 
-	public function results($method = 'assoc', $close_statement = true){
-		if(is_object($this->statement)){
-			if($result = $this->statement->get_result()){
+	public function results($method = 'assoc', $close_stmt = false){
+		if(is_object($this->stmt)){
+			$stmt_type = get_class($this->stmt);
 
-				$this->num_rows = $result->num_rows;
-				
-				if($close_statement === true){
-					$this->statement->close();
-				}
+			# Grab the result prepare() & query()
+			switch($stmt_type){
+				case 'mysqli_stmt':
+					$result = $this->stmt->get_result();
+					$close_result = 'close';
+					break;
 
-				switch($method) {
-					case 'assoc':
-						$method = 'fetch_assoc';
-						break;
+				case 'mysqli_result':
+					$result = $this->stmt;
+					$close_result = 'free';
+					break;
 
-					case 'row':
-						return $result->fetch_row();
-						break;
-
-					default:
-						$method = 'fetch_array';
-						break;
-				}
-
-				$results = array();
-				while($row = $result->$method()){
-					$results[] = $row;
-				}
-
-				return $results;
+				default:
+					throw new Exception;
 			}
-			else {
-				throw new Exception;
+
+			$this->num_rows = $result->num_rows;
+			
+			# Set the results type
+			switch($method) {
+				case 'assoc':
+					$method = 'fetch_assoc';
+					break;
+
+				case 'row':
+					return $result->fetch_row();
+					break;
+
+				default:
+					$method = 'fetch_array';
+					break;
 			}
+
+
+			$results = array();
+			while($row = $result->$method()){
+				$results[] = $row;
+			}
+
+			$result->$close_result();
+			return $results;
 		}
 		else {
 			throw new Exception;
@@ -109,7 +141,7 @@ class Mysqli_Database {
 		}
 	}
 
-	public function commit_transaction(){
+	public function commit(){
 		if(is_object($this->connection)){
 			# Commit!
 			if($this->connection->commit()){
@@ -122,7 +154,7 @@ class Mysqli_Database {
 		}
 	}
 
-	public function rollback_transaction(){
+	public function rollback(){
 		if(is_object($this->connection)){
 			# Commit!
 			if($this->connection->rollback()){
@@ -140,9 +172,7 @@ class Mysqli_Database {
 	}
 
 	public function affected_rows(){
-		if(is_object($this->connection)){
-			return $this->connection->affected_rows;
-		}
+		return $this->affected_rows;
 	}
 
 	public function insert_id(){
