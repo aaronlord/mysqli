@@ -113,7 +113,7 @@ class Mysqli_Database {
 					break;
 
 				case 'row':
-					return $result->fetch_row();
+					return 'fetch_row';
 					break;
 
 				default:

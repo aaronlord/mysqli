@@ -7,6 +7,7 @@ try {
 
 	###################################
 	# Prepared Select & Results
+	/*
 	$page_content = $database
 		->prepare("SELECT Body FROM Content WHERE ContentID = ? OR ContentID = ?;")
 		->execute(1, 2)
@@ -19,6 +20,21 @@ try {
 			.'<pre>'.print_r($page_content, 1).'</pre>'
 			.'<hr>';
 	}
+	*/
+
+	$database->prepare("SELECT Body FROM Content WHERE ContentID = ? OR ContentID = ?;");
+	$database->execute(1, 2);
+
+	$page_content = $database->results();
+
+	# Num Rows
+	if($database->num_rows() > 0){
+		echo '<h3>$database->prepare(select_sql)->excecute(params,here)->results();<br/>'
+			.'$database->num_rows();</h3>'
+			.'<pre>'.print_r($page_content, 1).'</pre>'
+			.'<hr>';
+	}
+
 
 	###################################
 	# Inserts & Affected Rows
