@@ -1,10 +1,21 @@
 <?php
 class Mysqli_Database {
-	# Connect to database
+	/**
+	 * Set up the database connection
+	 */
 	public function __construct(){
 		$this->connection = $this->connect('localhost', 'root', '', 'polly', true);
 	}
 
+	/**
+	 * Connect to the database, with or without a persistant connection
+	 * @param  String  $host       Mysql server hostname
+	 * @param  String  $user       Mysql username
+	 * @param  String  $pass       Mysql password
+	 * @param  String  $db         Database to use
+	 * @param  boolean $persistant Create a persistant connection
+	 * @return Object              Mysqli
+	 */
 	private function connect($host, $user, $pass, $db, $persistant = true){
 		$host = $persistant === true ? 'p:'.$host : $host;
 
@@ -16,6 +27,11 @@ class Mysqli_Database {
 		return $mysqli;
 	}
 
+	/**
+	 * Execute an SQL statement for execution.
+	 * @param  String $sql An SQL query
+	 * @return Object      $this
+	 */
 	public function query($sql){
 		$this->num_rows = 0;
 		$this->affected_rows = -1;
@@ -32,6 +48,11 @@ class Mysqli_Database {
 		}
 	}
 
+	/**
+	 * Prepare an SQL statement
+	 * @param  String $sql An SQL query
+	 * @return Object      $this
+	 */
 	public function prepare($sql){
 		$this->num_rows = 0;
 		$this->affected_rows = -1;
@@ -48,6 +69,12 @@ class Mysqli_Database {
 
 	public function multi_query(){ }
 
+	/**
+	 * Escapes the arguments passed in and executes a prepared Query.
+	 * @param Mixed $var   The value to be bound to the first SQL ?
+	 * @param Mixed $...   Each subsequent value to be bound to ?
+	 * @return Object      $this
+	 */
 	public function execute(){
 		if(is_object($this->connection) && is_object($this->stmt)){
 			# Ready the params
@@ -84,6 +111,12 @@ class Mysqli_Database {
 		}
 	}
 
+	/**
+	 * Fetch all results as an array, the type of array depend on the $method passed through.
+	 * @param  string  $method     Optional perameter to indicate what type of array to return.'assoc' is the default and returns an accociative array, 'row' returns a numeric array and 'array' returns an array of both.
+	 * @param  boolean $close_stmt Optional perameter to indicate if the statement should be destroyed after execution.
+	 * @return Array              Array of database results
+	 */
 	public function results($method = 'assoc', $close_stmt = false){
 		if(is_object($this->stmt)){
 			$stmt_type = get_class($this->stmt);
@@ -121,7 +154,6 @@ class Mysqli_Database {
 					break;
 			}
 
-
 			$results = array();
 			while($row = $result->$method()){
 				$results[] = $row;
@@ -135,12 +167,20 @@ class Mysqli_Database {
 		}
 	}
 
+	/**
+	 * Turns off auto-committing database modifications, starting a new transaction.
+	 * @return bool Dependant on the how successful the autocommit() call was
+	 */
 	public function start_transaction(){
 		if(is_object($this->connection)){
 			return $this->connection->autocommit(false);
 		}
 	}
 
+	/**
+	 * Commits the current transaction and turns auto-committing database modifications on, ending transactions.
+	 * @return bool Dependant on the how successful the autocommit() call was
+	 */
 	public function commit(){
 		if(is_object($this->connection)){
 			# Commit!
@@ -154,6 +194,10 @@ class Mysqli_Database {
 		}
 	}
 
+	/**
+	 * Rolls back current transaction and turns auto-committing database modifications on, ending transactions.
+	 * @return bool Dependant on the how successful the autocommit() call was
+	 */
 	public function rollback(){
 		if(is_object($this->connection)){
 			# Commit!
@@ -167,14 +211,26 @@ class Mysqli_Database {
 		}
 	}
 
+	/**
+	 * Return the number of rows in statements result set.
+	 * @return integer The number of rows
+	 */
 	public function num_rows(){
 		return $this->num_rows;
 	}
 
+	/**
+	 * Gets the number of affected rows in a previous MySQL operation.
+	 * @return integer The affected rows
+	 */
 	public function affected_rows(){
 		return $this->affected_rows;
 	}
 
+	/**
+	 * Returns the auto generated id used in the last query.
+	 * @return integer The last auto generated id
+	 */
 	public function insert_id(){
 		if(is_object($this->connection)){
 			return $this->connection->insert_id;
@@ -182,7 +238,9 @@ class Mysqli_Database {
 	}
 
 	/**
-	 * Fix call_user_func_array & bind_param pass by reference crap.
+	 * Fixes the call_user_func_array & bind_param pass by reference crap.
+	 * @param  array $arr The array to be referenced
+	 * @return array      A referenced array
 	 */
 	private function _pass_by_reference(&$arr){ 
 		$refs = array(); 
