@@ -1,84 +1,34 @@
 <?php
-class Mysqli_Database {
-	# Connect to database
-	public function __construct(){
-		$this->connection = $this->pconnect('localhost', 'root', 'root', 'test');
-	}
-
-	private function pconnect($host, $user, $pass, $db){
-		$mysqli = new mysqli('p:'.$host, $user, $pass, $db);
-
-		if($mysqli->connect_error)
-			throw new Exception('Connection Error: '.$mysqli->connect_error);
-
-		return $mysqli;
-	}
-
-	public function query($sql){
-		if(is_object($this->connection)){
-			# Ready the statement
-			$this->stmt = $this->connection->prepare($sql);
-			return $this;
-		}
-		else {
-			throw new Exception;
-		}
-	}
-
-	public function multi_query(){ }
-
-	public function execute(){
-		if(is_object($this->connection) && is_object($this->stmt)){
-			# Ready the params
-			$args = func_get_args();
-			$types = array();
-			$params = array();
-
-			foreach($args as $arg){
-				$types[] = is_int($arg) ? 'i' : (is_float($arg) ? 'd' : 's');
-				$params[] = $this->connection->real_escape_string($arg);
-			}
-
-			# Stick the types at the start of the params
-			array_unshift($params, implode($types));
-			
-			# Call bind_param (avoiding the pass_by_reference crap)
-			call_user_func_array(
-				array($this->stmt, 'bind_param'),
-				$this->_pass_by_reference($params)
-			);
-
-			echo '<pre>'.print_r($this->stmt, 1).'</pre>';
-		}
-		else {
-			throw new Exception;
-		}
-	}
-
-	public function results(){ }
-
-	public function num_rows(){ }
-
-	public function affected_rows(){ }
-
-	public function last_id(){ }
-
-	/**
-	 * Fix call_user_func_array & bind_param pass by reference crap.
-	 */
-	private function _pass_by_reference(&$arr){ 
-		$refs = array(); 
-		foreach($arr as $key => $value){
-			$refs[$key] = &$arr[$key]; 
-		}
-		return $refs; 
-	}
-}
-
-
 try {
+	include 'database/Mysqli_Database.php';
+
+	# New instance
 	$database = new Mysqli_Database;
-	$database->query("INSERT INTO test_table(name) VALUES (?), (?), (?);")->execute(3, 'Aaron', 5.5);
+
+	# Selects
+	$page_content = $database
+						->query("SELECT Body FROM Content WHERE ContentID = ? OR ContentID = ?;")
+						->execute(1, 2)
+						->results();
+	# Num Rows
+	if($database->num_rows()){
+		echo 'DB Results: <pre>'.print_r($page_content, 1).'</pre>';
+	}
+
+	# Inserts
+	$rows_in = $database
+					->query("INSERT INTO Content(PageID, StyleID, Body) VALUES (?, ?, ?), (?, ?, ?);")
+					->execute(2, 1, 'Whaddup', 2, 2, 'Ribs')
+					->affected_rows();
+	# Insert ID
+	if($rows_in > 0){
+		echo 'Inserted: '.$rows_in.' row'.(count($rows_in) > 0 ? 's' : '').'<br/>';
+		echo 'Insert ID: '.$database->insert_id().'<br/>';
+	}
+
+	# Transactions
+	
+	# Multiquery
 }
 catch(Exception $e){
 	echo $e->getMessage();
