@@ -67,8 +67,6 @@ class Mysqli_Database {
 		}
 	}
 
-	public function multi_query(){ }
-
 	/**
 	 * Escapes the arguments passed in and executes a prepared Query.
 	 * @param Mixed $var   The value to be bound to the first SQL ?
@@ -138,7 +136,7 @@ class Mysqli_Database {
 			}
 
 			$this->num_rows = $result->num_rows;
-			
+
 			# Set the results type
 			switch($method) {
 				case 'assoc':
@@ -242,11 +240,11 @@ class Mysqli_Database {
 	 * @param  array $arr The array to be referenced
 	 * @return array      A referenced array
 	 */
-	private function _pass_by_reference(&$arr){ 
-		$refs = array(); 
+	private function _pass_by_reference(&$arr){
+		$refs = array();
 		foreach($arr as $key => $value){
-			$refs[$key] = &$arr[$key]; 
+			$refs[$key] = &$arr[$key];
 		}
-		return $refs; 
+		return $refs;
 	}
 }
