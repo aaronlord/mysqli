@@ -77,8 +77,8 @@ class Mysqli_Database {
 		if(is_object($this->connection) && is_object($this->stmt)){
 			# Ready the params
 			if(count($args = func_get_args()) > 0){
-				if (isset($types) {unset($types);}
-				if (isset($params) {unset($params);}
+				if (isset($types)) {unset($types);}
+				if (isset($params)) {unset($params);}
 				$types = array();
 				$params = array();
 
