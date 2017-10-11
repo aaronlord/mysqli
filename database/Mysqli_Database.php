@@ -3,8 +3,8 @@ class Mysqli_Database {
 	/**
 	 * Set up the database connection
 	 */
-	public function __construct(){
-		$this->connection = $this->connect('localhost', 'root', '', 'polly', true);
+	public function __construct($host, $user, $pass, $db, $persistant = true){
+		$this->connection = $this->connect($host, $user, $pass, $db, $persistant);
 	}
 
 	/**
@@ -16,7 +16,7 @@ class Mysqli_Database {
 	 * @param  boolean $persistant Create a persistant connection
 	 * @return Object              Mysqli
 	 */
-	private function connect($host, $user, $pass, $db, $persistant = true){
+	private function connect($host, $user, $pass, $db, $persistant){
 		$host = $persistant === true ? 'p:'.$host : $host;
 
 		$mysqli = new mysqli($host, $user, $pass, $db);
@@ -77,6 +77,8 @@ class Mysqli_Database {
 		if(is_object($this->connection) && is_object($this->stmt)){
 			# Ready the params
 			if(count($args = func_get_args()) > 0){
+				if (isset($types)) {unset($types);}
+				if (isset($params)) {unset($params);}
 				$types = array();
 				$params = array();
 
